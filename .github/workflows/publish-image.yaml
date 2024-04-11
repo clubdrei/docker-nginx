@@ -1,0 +1,31 @@
+name: "Update docker images"
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "22 9 * * *"
+
+jobs:
+  # Build a customer NGINX docker image with Brotli support and push it to Quay.io
+  nginx-stable:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Download Dockerfile from the official NGINX repository"
+        run: curl https://raw.githubusercontent.com/nginxinc/docker-nginx/master/modules/Dockerfile.alpine > Dockerfile
+      - name: "Append custom Dockerfile commands"
+        run: cat images/stable-brotli/Dockerfile >> Dockerfile
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: "Login to ${{ vars.CI_REGISTRY }}"
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.CI_REGISTRY }}
+          username: ${{ secrets.CI_REGISTRY_USER }}
+          password: ${{ secrets.CI_REGISTRY_PASSWORD }}
+      - name: "Build and push"
+        uses: docker/build-push-action@v5
+        with:
+          file: Dockerfile
+          build-args: ENABLED_MODULES=brotli
+          push: true
+          tags: ${{ vars.CI_REGISTRY_IMAGE }}:stable-brotli
