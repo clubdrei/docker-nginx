@@ -25,6 +25,7 @@ jobs:
       - name: "Build and push"
         uses: docker/build-push-action@v5
         with:
+          context: .
           file: Dockerfile
           build-args: ENABLED_MODULES=brotli
           push: true
